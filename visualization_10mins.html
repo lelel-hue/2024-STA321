@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时资金流向图——平安银行</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+        }
+        .container {
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .controls label {
+            font-size: 16px;
+        }
+        .controls select {
+            padding: 5px;
+            font-size: 16px;
+        }
+        .summary {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .summary-item {
+            flex: 1;
+            text-align: center;
+            font-size: 18px;
+        }
+        .summary-item h3 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+        }
+        .summary-item p {
+            margin: 5px 0 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .chart {
+            flex: 1;
+            min-width: 300px;
+            height: 400px;
+        }
+        .timeline-chart {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>实时资金流向图</h1>
+        <div class="controls">
+            <label for="timeRange">选择时间段：</label>
+            <select id="timeRange">
+                <!-- 动态生成时间段选项 -->
+            </select>
+        </div>
+    </div>
+
+    <!-- Summary Section -->
+    <div class="summary">
+        <div class="summary-item">
+            <h3>主力流入</h3>
+            <p id="inflowAmount" style="color: #d43f3a;">0 亿</p>
+        </div>
+        <div class="summary-item">
+            <h3>主力流出</h3>
+            <p id="outflowAmount" style="color: #28a745;">0 亿</p>
+        </div>
+        <div class="summary-item">
+            <h3>主力净流向</h3>
+            <p id="netFlowAmount" style="color: #d43f3a;">0 亿</p>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="chart-container">
+        <div id="inflowPie" class="chart"></div>
+        <div id="outflowPie" class="chart"></div>
+        <div id="netFlowBar" class="chart"></div>
+    </div>
+
+    <!-- Timeline Chart -->
+    <div id="timelineChart" class="timeline-chart"></div>
+</div>
+
+<script>
+    // 数据插入点
+    const data = [
+  {
+    "时间区间": "20190102093000000 to 20190102094000000",
+    "主力净流入": -5564492,
+    "主力流入": 3067448.0,
+    "主力流出": 8631940.0,
+    "流入分布": [0, 327000, 274500, 301303],
+    "流出分布": [521600, 399800, 1106897, 664000]
+  },
+  {
+    "时间区间": "20190102094000000 to 20190102095000000",
+    "主力净流入": -2.375444616E7,
+    "主力流入": 4527929.63,
+    "主力流出": 2.828237579E7,
+    "流入分布": [0, 486100, 381000, 426700],
+    "流出分布": [1238463, 1807400, 2312900, 767937]
+  },
+  {
+    "时间区间": "20190102095000000 to 20190102100000000",
+    "主力净流入": -6643798.28,
+    "主力流入": 8479403.52,
+    "主力流出": 1.51232018E7,
+    "流入分布": [0, 915519, 1123700, 397500],
+    "流出分布": [348000, 1286240, 1030700, 334862]
+  },
+  {
+    "时间区间": "20190102100000000 to 20190102101000000",
+    "主力净流入": 10163778,
+    "主力流入": 1.2868543E7,
+    "主力流出": 2704765.0,
+    "流入分布": [735000, 652300, 411200, 272600],
+    "流出分布": [0, 291800, 454300, 325648]
+  },
+  {
+    "时间区间": "20190102101000000 to 20190102102000000",
+    "主力净流入": -9003510.33,
+    "主力流入": 2509653.0300000003,
+    "主力流出": 1.1513163360000001E7,
+    "流入分布": [0, 271661, 283600, 222800],
+    "流出分布": [900100, 345639, 387300, 235380]
+  },
+  {
+    "时间区间": "20190102102000000 to 20190102103000000",
+    "主力净流入": 287990,
+    "主力流入": 1706625.0,
+    "主力流出": 1418635.0,
+    "流入分布": [184500, 0, 252350, 171400],
+    "流出分布": [0, 153300, 128300, 225778]
+  },
+  {
+    "时间区间": "20190102103000000 to 20190102104000000",
+    "主力净流入": -5184610.39,
+    "主力流入": 801050.0,
+    "主力流出": 5985660.39,
+    "流入分布": [0, 86600, 138261, 141700],
+    "流出分布": [336000, 311900, 547539, 353400]
+  },
+  {
+    "时间区间": "20190102104000000 to 20190102105000000",
+    "主力净流入": 156188,
+    "主力流入": 917532.0,
+    "主力流出": 761344.0,
+    "流入分布": [0, 99300, 178600, 182500],
+    "流出分布": [0, 82500, 332800, 193400]
+  },
+  {
+    "时间区间": "20190102105000000 to 20190102110000000",
+    "主力净流入": 894475,
+    "主力流入": 3126816.0,
+    "主力流出": 2232341.0,
+    "流入分布": [0, 338400, 130300, 184600],
+    "流出分布": [0, 241800, 625800, 241589]
+  },
+  {
+    "时间区间": "20190102110000000 to 20190102111000000",
+    "主力净流入": -3322838,
+    "主力流入": 461500.0,
+    "主力流出": 3784338.0,
+    "流入分布": [0, 50000, 96700, 156700],
+    "流出分布": [170000, 240100, 474800, 237400]
+  },
+  {
+    "时间区间": "20190102111000000 to 20190102112000000",
+    "主力净流入": -2039136,
+    "主力流入": 1060527.0,
+    "主力流出": 3099663.0,
+    "流入分布": [114900, 0, 75700, 157000],
+    "流出分布": [271000, 64900, 318500, 113700]
+  },
+  {
+    "时间区间": "20190102112000000 to 20190102113000000",
+    "主力净流入": 113128,
+    "主力流入": 737752.0,
+    "主力流出": 624624.0,
+    "流入分布": [0, 79800, 103800, 125820],
+    "流出分布": [0, 67600, 258283, 99043]
+  },
+  {
+    "时间区间": "20190102130000000 to 20190102131000000",
+    "主力净流入": -4738232.96,
+    "主力流入": 816855.0,
+    "主力流出": 5555087.96,
+    "流入分布": [0, 88500, 98500, 142448],
+    "流出分布": [506752, 95400, 241672, 193228]
+  },
+  {
+    "时间区间": "20190102131000000 to 20190102132000000",
+    "主力净流入": -1.09698078E7,
+    "主力流入": 0.0,
+    "主力流出": 1.09698078E7,
+    "流入分布": [0, 0, 148640, 201140],
+    "流出分布": [943060, 247700, 501900, 379300]
+  },
+  {
+    "时间区间": "20190102132000000 to 20190102133000000",
+    "主力净流入": -2321611,
+    "主力流入": 1259452.0,
+    "主力流出": 3581063.0000000005,
+    "流入分布": [0, 136600, 214500, 234165],
+    "流出分布": [200000, 188700, 332735, 220565]
+  },
+  {
+    "时间区间": "20190102133000000 to 20190102134000000",
+    "主力净流入": -7241504.86,
+    "主力流入": 3522491.18,
+    "主力流出": 1.076399604E7,
+    "流入分布": [150258, 231900, 235700, 253856],
+    "流出分布": [702000, 467422, 392177, 208622]
+  },
+  {
+    "时间区间": "20190102134000000 to 20190102135000000",
+    "主力净流入": 16064,
+    "主力流入": 878696.0,
+    "主力流出": 862632.0,
+    "流入分布": [0, 95200, 160200, 126700],
+    "流出分布": [0, 93500, 198000, 237800]
+  },
+  {
+    "时间区间": "20190102135000000 to 20190102140000000",
+    "主力净流入": -15677034,
+    "主力流入": 1591488.0000000002,
+    "主力流出": 1.7268522E7,
+    "流入分布": [172800, 0, 176300, 175640],
+    "流出分布": [1258000, 618600, 576900, 325460]
+  },
+  {
+    "时间区间": "20190102140000000 to 20190102141000000",
+    "主力净流入": -2458534.56,
+    "主力流入": 3880134.0,
+    "主力流出": 6338668.5600000005,
+    "流入分布": [119900, 302900, 363000, 393700],
+    "流出分布": [296040, 394696, 841900, 353020]
+  },
+  {
+    "时间区间": "20190102141000000 to 20190102142000000",
+    "主力净流入": 904422,
+    "主力流入": 1408209.0,
+    "主力流出": 503787.00000000006,
+    "流入分布": [0, 152900, 146900, 233700],
+    "流出分布": [0, 54700, 78300, 140500]
+  },
+  {
+    "时间区间": "20190102142000000 to 20190102143000000",
+    "主力净流入": -648953,
+    "主力流入": 324544.0,
+    "主力流出": 973497.0,
+    "流入分布": [0, 35200, 295600, 146000],
+    "流出分布": [0, 105700, 139300, 106391]
+  },
+  {
+    "时间区间": "20190102143000000 to 20190102144000000",
+    "主力净流入": 738018,
+    "主力流入": 1236820.0,
+    "主力流出": 498802.0,
+    "流入分布": [0, 134000, 146300, 131900],
+    "流出分布": [0, 54100, 194200, 198400]
+  },
+  {
+    "时间区间": "20190102144000000 to 20190102145000000",
+    "主力净流入": -5193262.8,
+    "主力流入": 3634132.6000000006,
+    "主力流出": 8827395.4,
+    "流入分布": [0, 394480, 229340, 135800],
+    "流出分布": [659900, 299551, 336669, 279669]
+  },
+  {
+    "时间区间": "20190102145000000 to 20190102150000000",
+    "主力净流入": -3842762.98,
+    "主力流入": 1244288.0,
+    "主力流出": 5087050.98,
+    "流入分布": [0, 135300, 206700, 384865],
+    "流出分布": [198000, 355542, 495817, 325900]
+  }
+];
+
+    // 初始化图表对象
+    const inflowPie = echarts.init(document.getElementById("inflowPie"));
+    const outflowPie = echarts.init(document.getElementById("outflowPie"));
+    const netFlowBar = echarts.init(document.getElementById("netFlowBar"));
+    const timelineChart = echarts.init(document.getElementById("timelineChart"));
+
+    // 动态生成时间段选项
+    const timeRangeSelect = document.getElementById("timeRange");
+    data.forEach((item, index) => {
+        const option = document.createElement("option");
+        option.value = index;
+        option.textContent = item.时间区间;
+        timeRangeSelect.appendChild(option);
+    });
+
+    // 更新页面内容
+    const updateContent = (index) => {
+        const selectedData = data[index];
+
+        // 更新数值显示
+        document.getElementById("inflowAmount").textContent = (selectedData.主力流入 / 1e8).toFixed(2) + " 亿";
+        document.getElementById("outflowAmount").textContent = (selectedData.主力流出 / 1e8).toFixed(2) + " 亿";
+        document.getElementById("netFlowAmount").textContent =
+            (selectedData.主力净流入 / 1e8).toFixed(2) + " 亿";
+
+        // 更新流入分布饼图
+        inflowPie.setOption({
+            title: { text: "流入分布", left: "center" },
+            tooltip: { trigger: "item" },
+            series: [
+                {
+                    name: "流入分布",
+                    type: "pie",
+                    radius: ["40%", "70%"],
+                    data: [
+                        { value: selectedData.流入分布[0], name: "超大单" },
+                        { value: selectedData.流入分布[1], name: "大单" },
+                        { value: selectedData.流入分布[2], name: "中单" },
+                        { value: selectedData.流入分布[3], name: "小单" },
+                    ],
+                },
+            ],
+        });
+
+        // 更新流出分布饼图
+        outflowPie.setOption({
+            title: { text: "流出分布", left: "center" },
+            tooltip: { trigger: "item" },
+            series: [
+                {
+                    name: "流出分布",
+                    type: "pie",
+                    radius: ["40%", "70%"],
+                    data: [
+                        { value: selectedData.流出分布[0], name: "超大单" },
+                        { value: selectedData.流出分布[1], name: "大单" },
+                        { value: selectedData.流出分布[2], name: "中单" },
+                        { value: selectedData.流出分布[3], name: "小单" },
+                    ],
+                },
+            ],
+        });
+
+        // 更新净流向分布柱状图
+        netFlowBar.setOption({
+            title: { text: "净流向分布", left: "center" },
+            tooltip: { trigger: "axis" },
+            xAxis: {
+                type: "category",
+                data: ["超大单", "大单", "中单", "小单"],
+            },
+            yAxis: { type: "value" },
+            series: [
+                {
+                    name: "净流向",
+                    type: "bar",
+                    data: selectedData.流入分布.map((value, i) => value - selectedData.流出分布[i]),
+                    itemStyle: {
+                        color: (params) => (params.value > 0 ? "#d43f3a" : "#28a745"),
+                    },
+                },
+            ],
+        });
+    };
+
+    // 初始化时间轴图表
+    const updateTimelineChart = () => {
+        const timeLabels = data.map((item) => item.时间区间);
+        const netInflowValues = data.map((item) => item.主力净流入);
+        const inflowValues = data.map((item) => item.主力流入);
+        const outflowValues = data.map((item) => item.主力流出);
+
+        timelineChart.setOption({
+            title: { text: "资金流向时间轴分布", left: "center" },
+            tooltip: { trigger: "axis" },
+            legend: { top: "10%", data: ["主力净流入", "主力流入", "主力流出"] },
+            xAxis: {
+                type: "category",
+                data: timeLabels,
+                boundaryGap: false,
+            },
+            yAxis: { type: "value" },
+            series: [
+                {
+                    name: "主力净流入",
+                    type: "line",
+                    data: netInflowValues,
+                    smooth: true,
+                    lineStyle: { color: "#5470c6" },
+                    areaStyle: { color: "#d3e4ff" },
+                },
+                {
+                    name: "主力流入",
+                    type: "line",
+                    data: inflowValues,
+                    smooth: true,
+                    lineStyle: { color: "#28a745" },
+                },
+                {
+                    name: "主力流出",
+                    type: "line",
+                    data: outflowValues,
+                    smooth: true,
+                    lineStyle: { color: "#d43f3a" },
+                },
+            ],
+        });
+    };
+
+    // 初次加载
+    updateContent(0);
+    updateTimelineChart();
+
+    // 绑定时间段选择事件
+    timeRangeSelect.addEventListener("change", (e) => {
+        updateContent(e.target.value);
+    });
+</script>
+</body>
+</html>
